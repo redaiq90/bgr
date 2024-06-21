@@ -1,0 +1,3 @@
+rembg
+python-telegram-bot
+Pillow
