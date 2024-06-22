@@ -1,4 +1,5 @@
 import os
+import logging
 import time
 from PIL import Image
 from rembg import remove
@@ -8,6 +9,9 @@ import sqlite3
 #Edited By Reda
 TOKEN = ""
 OWNER_ID = 1374312239
+CHANNEL_USERNAME = "iqbots0"
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def init_db():
     conn = sqlite3.connect('users.db')
@@ -58,7 +62,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         profile_link = get_profile_link(username)
         notification = f"New user entered the bot:\n\nID: {user_id}\nUsername: @{username}\nProfile: {profile_link}"
         await context.bot.send_message(chat_id=OWNER_ID, text=notification)
-
+    
+    member_status = await context.bot.get_chat_member(CHANNEL_ID, user_id)
+    logger.info(str(member_status))
+    if not member_status.status in ['administrator', 'creator', 'member']:
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("اشتراك", url=f"https://t.me/{CHANNEL_USERNAME}")]])
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="عليك أن تشترك في القناة أولاً:", reply_markup=keyboard)
+        return
     await context.bot.send_message(chat_id=chat_id , text=f"{user} مرحباً\n\nأنا بوت لإزالة الخلفيات من الصور\n\nأرسل لي الصورة لإزالة خلفيتها .")
 
 async def count_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -126,6 +136,12 @@ async def process_img(photo_name: str):
     return output_photo_path
 
 async def handler_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.message.from_user.id
+    member_status = await context.bot.get_chat_member(CHANNEL_ID, user_id)
+    if not member_status.status in ['administrator', 'creator', 'member']:
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("اشتراك", url=f"https://t.me/{CHANNEL_USERNAME}")]])
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="عليك أن تشترك في القناة أولاً:", reply_markup=keyboard)
+        return
     if update.message.photo:  # Check if the update contains a photo
         file_id = update.message.photo[-1].file_id
         unique_file_id = update.message.photo[-1].file_unique_id
