@@ -3,13 +3,14 @@ import logging
 import time
 from PIL import Image
 from rembg import remove
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+
 import sqlite3
 #Edited By Reda
 TOKEN = ""
 OWNER_ID = 1374312239
-CHANNEL_USERNAME = "iqbots0"
+CHANNEL_USERNAME = -1001236643142
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -64,8 +65,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=OWNER_ID, text=notification)
     
     member_status = await context.bot.get_chat_member(CHANNEL_ID, user_id)
-    logger.info(str(member_status))
-    if not member_status.status in ['administrator', 'creator', 'member']:
+    status_name = member_status["status"]
+    logger.info(str(status_name)))
+    if not status_name in ['administrator', 'creator', 'member']:
         keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("اشتراك", url=f"https://t.me/{CHANNEL_USERNAME}")]])
         await context.bot.send_message(chat_id=update.effective_chat.id, text="عليك أن تشترك في القناة أولاً:", reply_markup=keyboard)
         return
