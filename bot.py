@@ -5,7 +5,7 @@ from rembg import remove
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 import sqlite3
-
+#Edited Reda
 TOKEN = ""
 OWNER_ID = 1374312239
 
