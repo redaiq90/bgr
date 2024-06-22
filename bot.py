@@ -4,26 +4,90 @@ from PIL import Image
 from rembg import remove
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+import sqlite3
 
 TOKEN = ""
+OWNER_ID = 1374312239
+
+def init_db():
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        user_id INTEGER UNIQUE
+    )
+    ''')
+    conn.commit()
+    conn.close()
+    print("Database Working!")
+
+def add_user_if_not_exists(user_id, username):
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE user_id = ?', (user_id,))
+    user = cursor.fetchone()
+    if not user:
+        cursor.execute('INSERT INTO users (username, user_id) VALUES (?, ?)', (username, user_id))
+        conn.commit()
+        conn.close()
+        return True
+    conn.close()
+    return False
+
+# Function to get the profile link of a user
+def get_profile_link(username):
+    return f"https://t.me/{username}" if username else "N/A"
+
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
-    user = update.message.from_user.first_name
-    await context.bot.send_message(chat_id=chat_id , text=f"""
-        اهلا بيك حبي 👤 {user}
-        Command ::
-        ID : 🆔 /id
-        Username : 👤 /user
-        content : @pythonforbot1
-        Help : /help
+    user = update.message.from_user.first_name or update.message.from_user.username
+    user_info = update.message.from_user
+    first_name = user_info.first_name
+    user_id = user_info.id
+    username = user_info.username
 
-""")
-    await context.bot.send_message(chat_id=chat_id , text="انا بوت ازالة الخلفية من الصور كل ما عليك ارسال لي الصورة التي تريد ازالة الخلفية منها ")
-time.sleep(2)
+    # Check if user is new and add to the database if so
+    is_new_user = add_user_if_not_exists(user_id, username)
+
+    # Notify the owner about the new user
+    if is_new_user and user_id != OWNER_ID:
+        profile_link = get_profile_link(username)
+        notification = f"New user entered the bot:\n\nID: {user_id}\nUsername: @{username}\nProfile: {profile_link}"
+        await context.bot.send_message(chat_id=OWNER_ID, text=notification)
+
+    await context.bot.send_message(chat_id=chat_id , text=f"{user} مرحباً\n\nأنا بوت لإزالة الخلفيات من الصور\n\nأرسل لي الصورة لإزالة خلفيتها .")
+
+async def count_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.message.chat.id
+    user_id = update.message.from_user.id
+
+    if user_id != OWNER_ID:
+        #await context.bot.send_message(chat_id=chat_id, text="You are not authorized to use this command.")
+        return
+
+    # Connect to the SQLite database
+    conn = sqlite3.connect('users.db')  # Replace with the actual path to your database
+    cursor = conn.cursor()
+
+    # Query to count users
+    cursor.execute("SELECT COUNT(*) FROM users")
+    user_count = cursor.fetchone()[0]
+
+    # Close the database connection
+    cursor.close()
+    conn.close()
+
+    # Send the user count as a message
+    await context.bot.send_message(chat_id=chat_id, text=f"Total number of users: {user_count}")
+
+
 async def id_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
-    await context.bot.send_message(chat_id=chat_id , text=f"The ID IS : {chat_id}")
+    await context.bot.send_message(chat_id=chat_id , text=f"Your ID: {chat_id}")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
@@ -60,7 +124,7 @@ async def process_img(photo_name: str):
     output_img.save(output_photo_path)
     os.remove(f"./int/{photo_name}")
     return output_photo_path
-time.sleep(2)
+
 async def handler_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if filters.PHOTO.check_update(update):
         file_id = update.message.photo[-1].file_id
@@ -77,23 +141,21 @@ async def handler_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await photo_file.download_to_drive(custom_path=f"./int/{photo_name}")
     await context.bot.send_message(chat_id=update.effective_chat.id , text=".....يـتم ازالـة الخـلفيه")
     processed_img = await process_img(photo_name)
-    await context.bot.send_document(chat_id=update.effective_chat.id , document=processed_img)
+    await context.bot.send_document(chat_id=update.effective_chat.id , document=processed_img, caption="By: @@iq_bg_bot")
     os.remove(processed_img)
-    os.remove(f"./int/{photo_name}")
 
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(TOKEN).build()
-
+    init_db()
     start_handler = CommandHandler("start" , start)
     id_users_handler = CommandHandler("id" , id_users)
-    help_handler = CommandHandler("help" , help_command)
     info_user_handler = CommandHandler("info", info_user)
     message_handler = MessageHandler(filters.PHOTO | filters.Document.IMAGE,handler_message)
-
+    total_users_h = CommandHandler("stats", count_users)
     app.add_handler(start_handler)
     app.add_handler(id_users_handler)
-    app.add_handler(help_handler)
+    app.add_handler(total_users_h)
     app.add_handler(info_user_handler)
     app.add_handler(message_handler)
 
