@@ -126,22 +126,24 @@ async def process_img(photo_name: str):
     return output_photo_path
 
 async def handler_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if filters.PHOTO.check_update(update):
+    if update.message.photo:  # Check if the update contains a photo
         file_id = update.message.photo[-1].file_id
         unique_file_id = update.message.photo[-1].file_unique_id
         photo_name = f"{unique_file_id}.jpg"
-    elif filters.Document.check_update(update) and filters.Document.IMAGE.check_update(update):
+    elif update.message.document and update.message.document.mime_type.startswith('image'):  # Check if the document is an image
         file_id = update.message.document.file_id
         _, f_ext = os.path.splitext(update.message.document.file_name)
         unique_file_id = update.message.document.file_unique_id
         photo_name = f"{unique_file_id}{f_ext}"
     else:
-        context.bot.send_message(chat_id=update.effective_chat.id , text="ارسل الصورة المراد ازالة خلفيتها ! لا شيء اخر.")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="ارسل الصورة المراد ازالة خلفيتها! لا شيء اخر.")
+        return
+
     photo_file = await context.bot.get_file(file_id)
     await photo_file.download_to_drive(custom_path=f"./int/{photo_name}")
-    await context.bot.send_message(chat_id=update.effective_chat.id , text=".....يـتم ازالـة الخـلفيه")
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="..... انتـظر قلـيلاً يـتم ازالـة الخـلفيه")
     processed_img = await process_img(photo_name)
-    await context.bot.send_document(chat_id=update.effective_chat.id , document=processed_img, caption="By: @@iq_bg_bot")
+    await context.bot.send_document(chat_id=update.effective_chat.id, document=processed_img, caption="By: @@iq_bg_bot")
     os.remove(processed_img)
 
 
