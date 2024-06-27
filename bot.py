@@ -8,13 +8,18 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 
 import sqlite3
 #Edited By Reda
-TOKEN = ""
+TOKEN = os.environ.get("TOKEN", "12706503")
 OWNER_ID = 1374312239
 CHANNEL_ID = -1001236643142
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def init_db():
+    filename = 'users.db'
+    if not os.path.isfile(filename)
+    with open(filename, 'w') as file:
+        pass
+
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     cursor.execute('''
@@ -26,7 +31,7 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    print("Database Working!")
+    logger.info("Database Working!")
 
 def add_user_if_not_exists(user_id, username):
     conn = sqlite3.connect('users.db')
