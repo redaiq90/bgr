@@ -2,3 +2,5 @@ numpy==1.26.4
 rembg
 python-telegram-bot
 Pillow
+flask
+flask_restful
