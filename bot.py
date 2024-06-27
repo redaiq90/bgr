@@ -19,7 +19,14 @@ def init_db():
     if not os.path.isfile(filename):
         with open(filename, 'w') as file:
             pass
-
+    directories = ['int', 'processed']
+    for directory in directories:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            logger.info(f"Directory '{directory}' created")
+        else:
+            logger.info(f"Directory '{directory}' already exists")
+    
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     cursor.execute('''
